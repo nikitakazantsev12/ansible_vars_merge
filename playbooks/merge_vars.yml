@@ -1,0 +1,32 @@
+- hosts: localhost
+  gather_facts: false
+  vars:
+    level1_icinga__to_merge:
+      services:
+        - crond
+        - rsyslog
+    level2_icinga__to_merge:
+      services:
+        - firewalld
+        - splunk
+  tasks:
+    - name: add special hosts
+      add_host:
+        name: "{{ item.key }}"
+        groups: "{{ item.value }}"
+      with_dict: "{{ special_hosts }}"
+      tags: host_vars
+
+- hosts: all
+  gather_facts: false
+  pre_tasks:
+    - name: merge icinga vars
+      ansible_merge_vars:
+        suffix_to_merge: icinga__to_merge
+        merged_var_name: icinga_host_vars
+        expected_type: 'dict'
+        recursive_dict_merge: true
+      tags: always
+  roles:
+    - { role: ansible-icinga, task_set: icinga_host_vars, tags: [ 'host_vars'] }
+
